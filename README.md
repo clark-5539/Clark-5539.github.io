@@ -1,4 +1,3 @@
-# clark-5539.github.io
 <!DOCTYPE html>
 <html lang="es">
 <head>
