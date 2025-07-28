@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diseñador de Armamento RPG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Poppins:wght@400;600&display=swap');
+        
+        :root {
+            --primary: #6d28d9;
+            --secondary: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f172a;
+            color: var(--light);
+            min-height: 100vh;
+        }
+        
+        .medieval {
+            font-family: 'MedievalSharp', cursive;
+        }
+        
+        .weapon-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border: 1px solid #475569;
+        }
+        
+        .weapon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stat-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #334155;
+        }
+        
+        .stat-progress {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), #8b5cf6);
+        }
+        
+        .tab-active {
+            border-bottom: 3px solid var(--secondary);
+            color: var(--secondary);
+        }
+        
+        .texture-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #475569;
+            transition: all 0.2s ease;
+        }
+        
+        .texture-preview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+        
+        #model-viewer {
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--secondary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upgrade-btn {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            transition: all 0.2s ease;
+        }
+        
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(109, 40, 217, 0.4);
+        }
+        
+        .section-title {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+        
+        .floating-btn {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="pb-20">
+    <!-- Header -->
+    <header class="bg-slate-900 py-4 px-6 shadow-lg sticky top-0 z-10">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl medieval font-bold text-purple-400">Arsenal Mágico</h1>
+            <button id="save-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
+                Guardar
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4">
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-700 mt-6 mb-8">
+            <button class="tab-btn px-6 py-3 font-medium tab-active" data-tab="weapons">Armas</button>
+            <button class="tab-btn px-6 py-3 font-medium" data-tab="armors">Armaduras</button>
+            <button class="tab-btn px-6 py-3 font-medium" data-tab="textures">Texturas</button>
+            <button class="tab-btn px-6 py-3 font-medium" data-tab="my-creations">Mis Creaciones</button>
+        </div>
+
+        <!-- Weapons Section -->
+        <section id="weapons" class="tab-content py-4 active">
+            <h2 class="text-xl medieval font-bold mb-6 section-title">Diseña tu Arma</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Weapon Type Selection -->
+                <div class="weapon-card p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4">Tipo de Arma</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="weapon-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="magic">
+                            Magia
+                        </button>
+                        <button class="weapon-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="range">
+                            Distancia
+                        </button>
+                        <button class="weapon-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="melee">
+                            Cuerpo a Cuerpo
+                        </button>
+                        <button class="weapon-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="mid-range">
+                            Media Distancia
+                        </button>
+                    </div>
+                    
+                    <!-- Model Preview -->
+                    <div id="model-viewer" class="mt-6 rounded-lg">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/221e27cb-713b-4b8c-ac0f-93f03ab94193.png" alt="Vista previa 3D de un arma de rol genérica - funda de espada flotando con efectos de partículas mágicas" class="w-full h-full object-contain" />
+                    </div>
+                </div>
+                
+                <!-- Weapon Stats -->
+                <div class="weapon-card p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4">Estadísticas</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block mb-2">Nombre del Arma</label>
+                        <input type="text" id="weapon-name" class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Daño</span>
+                                <span id="damage-value" class="font-medium">25</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Velocidad</span>
+                                <span id="speed-value" class="font-medium">60</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Alcance</span>
+                                <span id="range-value" class="font-medium">30</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 30%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Crítico</span>
+                                <span id="crit-value" class="font-medium">15%</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 15%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="font-medium mb-2">Habilidades Especiales</h4>
+                        <select id="special-ability" class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option value="">Seleccionar habilidad</option>
+                            <option value="fire">Llamas Ardientes</option>
+                            <option value="ice">Congelación</option>
+                            <option value="lightning">Impacto Eléctrico</option>
+                            <option value="poison">Veneno Corrosivo</option>
+                        </select>
+                    </div>
+                    
+                    <button id="create-weapon-btn" class="mt-6 w-full py-3 rounded-lg upgrade-btn text-white font-medium">
+                        Crear Arma
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Weapon Customization -->
+            <div class="weapon-card p-6 rounded-xl mt-6">
+                <h3 class="text-lg font-semibold mb-4">Personalización</h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Material</h4>
+                        <select class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option>Hierro</option>
+                            <option>Acero</option>
+                            <option>Mithril</option>
+                            <option>Ébano</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Tamaño</h4>
+                        <select class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option>Pequeño</option>
+                            <option>Mediano</option>
+                            <option>Grande</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Estilo</h4>
+                        <select class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option>Clásico</option>
+                            <option>Gótico</option>
+                            <option>Élfico</option>
+                            <option>Demoníaco</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium mb-2">Efectos</h4>
+                        <select class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option>Ninguno</option>
+                            <option>Resplandor</option>
+                            <option>Humo</option>
+                            <option>Chispas</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Armors Section -->
+        <section id="armors" class="tab-content py-4 hidden">
+            <h2 class="text-xl medieval font-bold mb-6 section-title">Diseña tu Armadura</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Armor Type Selection -->
+                <div class="weapon-card p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4">Tipo de Armadura</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="armor-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="light">
+                            Ligera
+                        </button>
+                        <button class="armor-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="medium">
+                            Media
+                        </button>
+                        <button class="armor-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="heavy">
+                            Pesada
+                        </button>
+                        <button class="armor-type-btn py-2 px-4 rounded-lg bg-slate-700 hover:bg-purple-800 transition" data-type="magic">
+                            Mágica
+                        </button>
+                    </div>
+                    
+                    <!-- Model Preview -->
+                    <div id="armor-model-viewer" class="mt-6 rounded-lg">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/711e8ef8-57e4-46d3-b936-d5a68cb3ccf7.png" alt="Vista previa 3D de una armadura de pecho medieval con diseños ornamentales y superficies pulidas" class="w-full h-full object-contain" />
+                    </div>
+                </div>
+                
+                <!-- Armor Stats -->
+                <div class="weapon-card p-6 rounded-xl">
+                    <h3 class="text-lg font-semibold mb-4">Estadísticas</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block mb-2">Nombre de la Armadura</label>
+                        <input type="text" id="armor-name" class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Defensa</span>
+                                <span id="defense-value" class="font-medium">45</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 45%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Resistencia Mágica</span>
+                                <span id="magic-resist-value" class="font-medium">30</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 30%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Movilidad</span>
+                                <span id="mobility-value" class="font-medium">65</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Durabilidad</span>
+                                <span id="durability-value" class="font-medium">80</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-progress" style="width: 80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="font-medium mb-2">Bonus de Conjunto</h4>
+                        <select id="set-bonus" class="w-full p-2 rounded bg-slate-700 border border-slate-600">
+                            <option value="">Seleccionar bonus</option>
+                            <option value="health">+20% Salud</option>
+                            <option value="stamina">+15% Energía</option>
+                            <option value="crit">+5% Crítico</option>
+                            <option value="speed">+10% Velocidad</option>
+                        </select>
+                    </div>
+                    
+                    <button id="create-armor-btn" class="mt-6 w-full py-3 rounded-lg upgrade-btn text-white font-medium">
+                        Crear Armadura
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Textures Section -->
+        <section id="textures" class="tab-content py-4 hidden">
+            <h2 class="text-xl medieval font-bold mb-6 section-title">Biblioteca de Texturas</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('metallic_gold')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/74e7af20-189d-485f-b2f8-3d72c0dd47b7.png')"
+                         title="Oro Metálico">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Oro Metálico</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('obsidian')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/cf248712-d994-4f8d-a726-78ff76f8e430.png')"
+                         title="Obsidiana">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Obsidiana</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('dragon_scale')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/ad5954b4-d96f-47ed-834c-181c7cef5b4c.png')"
+                         title="Escama de Dragón">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Escama de Dragón</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('crystal')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6f9a7e75-26f6-4ffc-a6ca-2016435e6896.png')"
+                         title="Cristal">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Cristal</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('runes')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/7ba401cf-0fa8-4fef-a815-3a2b283515d0.png')"
+                         title="Runas Arcanas">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Runas Arcanas</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('fire')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/e1ed4db6-2aaa-4054-81af-6e72caa51765.png')"
+                         title="Llamas">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Llamas</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('ice')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/fd72152c-281f-4a43-8955-2e4299c83657.png')"
+                         title="Hielo">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Hielo</p>
+                </div>
+                
+                <div class="texture-item">
+                    <div class="texture-preview rounded-lg" 
+                         onclick="applyTexture('void')" 
+                         style="background-image: url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/32a5014c-294e-4e75-9964-0f7d0cd8be52.png')"
+                         title="Vacío Estelar">
+                    </div>
+                    <p class="text-center mt-2 text-sm">Vacío Estelar</p>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <button class="px-4 py-2 bg-purple-700 hover:bg-purple-800 rounded-lg transition">
+                    Subir Textura Personalizada
+                </button>
+            </div>
+        </section>
+
+        <!-- My Creations Section -->
+        <section id="my-creations" class="tab-content py-4 hidden">
+            <h2 class="text-xl medieval font-bold mb-6 section-title">Mis Creaciones</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="creations-container">
+                <!-- Items will be loaded here dynamically -->
+                <p class="text-center text-slate-400 col-span-full py-8">No tienes creaciones guardadas aún</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Upgrade Button -->
+    <div class="fixed bottom-6 right-6">
+        <button id="upgrade-floating-btn" class="floating-btn bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-full shadow-lg transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Upgrade Modal -->
+    <div id="upgrade-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl medieval font-bold">Mejorar Item</h3>
+                <button id="close-upgrade-modal" class="text-slate-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block mb-2">Item seleccionado</label>
+                <input type="text" class="w-full p-2 rounded bg-slate-700 border border-slate-600" value="Espada del Abismo" readonly>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block mb-2">Nivel actual: <span class="font-bold">3</span></label>
+                <div class="relative pt-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-purple-600 bg-purple-200">
+                                Progreso
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-semibold inline-block text-purple-600">
+                                64%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-700 mt-2">
+                        <div style="width:64%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-slate-700 p-4 rounded-lg">
+                    <div class="text-center mb-2 text-sm">Costo de Mejora</div>
+                    <div class="text-center text-yellow-400 font-bold">450 Oro</div>
+                </div>
+                <div class="bg-slate-700 p-4 rounded-lg">
+                    <div class="text-center mb-2 text-sm">Materiales</div>
+                    <div class="text-center text-yellow-400 font-bold">3 Fragmentos</div>
+                </div>
+            </div>
+            
+            <button class="w-full py-3 rounded-lg upgrade-btn text-white font-medium">
+                Mejorar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                // Add active class to clicked tab
+                btn.classList.add('tab-active');
+                const tabId = btn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+        
+        // Weapon Type Selection
+        document.querySelectorAll('.weapon-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.weapon-type-btn').forEach(b => b.classList.remove('bg-purple-800'));
+                btn.classList.add('bg-purple-800');
+                
+                const type = btn.getAttribute('data-type');
+                const modelViewer = document.getElementById('model-viewer');
+                let imgAlt = '';
+                
+                switch(type) {
+                    case 'magic':
+                        imgAlt = "Varita mágica de diseño elegante con cristal brillante en la punta, emanando energía arcana";
+                        break;
+                    case 'range':
+                        imgAlt = "Arco compuesto de alta precisión con detalles de plata y cuerdas de tendón de dragón";
+                        break;
+                    case 'melee':
+                        imgAlt = "Espada de doble filo con empuñadura grabada y hoja afilada que refleja la luz";
+                        break;
+                    case 'mid-range':
+                        imgAlt = "Lanza de combate con punta curva y grabados rúnicos a lo largo del asta";
+                        break;
+                }
+                
+                modelViewer.querySelector('img').alt = imgAlt;
+                modelViewer.querySelector('img').src = `https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/6e7e7ced-a8be-42f0-b753-a8dc02312761.png)}+WEAPON`;
+            });
+        });
+        
+        // Armor Type Selection
+        document.querySelectorAll('.armor-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.armor-type-btn').forEach(b => b.classList.remove('bg-purple-800'));
+                btn.classList.add('bg-purple-800');
+                
+                const type = btn.getAttribute('data-type');
+                const modelViewer = document.getElementById('armor-model-viewer');
+                let imgAlt = '';
+                
+                switch(type) {
+                    case 'light':
+                        imgAlt = "Armadura de cuero endurecido con protecciones cinéticas estratégicas para combate ágil";
+                        break;
+                    case 'medium':
+                        imgAlt = "Coraza de placas metálicas con un balance entre protección y movilidad";
+                        break;
+                    case 'heavy':
+                        imgAlt = "Armadura completa de placas de acero con grabados ancestrales y protección total";
+                        break;
+                    case 'magic':
+                        imgAlt = "Túnica encantada con runas brillantes y tejidos impregnados de poder mágico";
+                        break;
+                }
+                
+                modelViewer.querySelector('img').alt = imgAlt;
+                modelViewer.querySelector('img').src = `https://placehold.co/600x400?text=${type.toUpperCase()}+ARMOR`;
+            });
+        });
+        
+        // Stat Sliders - Weapons
+        ['damage', 'speed', 'range', 'crit'].forEach(stat => {
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            slider.value = 
+                stat === 'damage' ? '50' : 
+                stat === 'speed' ? '60' : 
+                stat === 'range' ? '30' : '15';
+            slider.classList.add('w-full', 'cursor-pointer', 'opacity-0', 'absolute', 'inset-0');
+            
+            const container = document.querySelector(`#${stat}-value`).parentNode.parentNode;
+            container.querySelector('.stat-bar').appendChild(slider);
+            
+            slider.addEventListener('input', () => {
+                const value = slider.value;
+                document.getElementById(`${stat}-value`).textContent = stat === 'crit' ? `${value}%` : value;
+                container.querySelector('.stat-progress').style.width = `${value}%`;
+            });
+        });
+        
+        // Stat Sliders - Armors
+        ['defense', 'magic-resist', 'mobility', 'durability'].forEach(stat => {
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            slider.value = 
+                stat === 'defense' ? '45' : 
+                stat === 'magic-resist' ? '30' : 
+                stat === 'mobility' ? '65' : '80';
+            slider.classList.add('w-full', 'cursor-pointer', 'opacity-0', 'absolute', 'inset-0');
+            
+            const container = document.querySelector(`#${stat}-value`).parentNode.parentNode;
+            container.querySelector('.stat-bar').appendChild(slider);
+            
+            slider.addEventListener('input', () => {
+                const value = slider.value;
+                document.getElementById(`${stat}-value`).textContent = value;
+                container.querySelector('.stat-progress').style.width = `${value}%`;
+            });
+        });
+        
+        // Upgrade Modal
+        document.getElementById('upgrade-floating-btn').addEventListener('click', () => {
+            document.getElementById('upgrade-modal').classList.remove('hidden');
+        });
+        
+        document.getElementById('close-upgrade-modal').addEventListener('click', () => {
+            document.getElementById('upgrade-modal').classList.add('hidden');
+        });
+        
+        // Save/Load functionality
+        function saveCreations() {
+            const creations = [
+                {
+                    name: 'Espada del Abismo',
+                    type: 'melee',
+                    damage: 68,
+                    speed: 45,
+                    range: 18,
+                    crit: '22%',
+                    level: 3,
+                    progress: 64,
+                    texture: 'void'
+                },
+                {
+                    name: 'Armadura Celestial',
+                    type: 'medium',
+                    defense: 55,
+                    magicResist: 72,
+                    mobility: 40,
+                    durability: 60,
+                    level: 2,
+                    progress: 35,
+                    texture: 'crystal'
+                }
+            ];
+            
+            localStorage.setItem('rpgCreations', JSON.stringify(creations));
+            alert('Tus creaciones han sido guardadas correctamente.');
+        }
+        
+        function loadCreations() {
+            const saved = localStorage.getItem('rpgCreations');
+            if (saved) {
+                const creations = JSON.parse(saved);
+                const container = document.getElementById('creations-container');
+                
+                if (creations.length > 0) {
+                    container.innerHTML = '';
+                    
+                    creations.forEach(item => {
+                        const isWeapon = item.damage !== undefined;
+                        const card = document.createElement('div');
+                        card.className = 'weapon-card p-4 rounded-lg cursor-pointer hover:shadow-lg transition';
+                        card.innerHTML = `
+                            <div class="flex items-start">
+                                <div class="w-16 h-16 bg-slate-700 rounded-md mr-4 overflow-hidden">
+                                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/149d2f5f-a1e1-4fd4-8484-add18f4b6ab6.png'WEAPON' : 'ARMOR'}" alt="${isWeapon ? 'Icono de arma' : 'Icono de armadura'}" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium mb-1">${item.name}</h4>
+                                    <p class="text-sm text-slate-400 mb-2">${isWeapon ? 'Arma' : 'Armadura'} | Nivel ${item.level}</p>
+                                    <div class="w-full bg-slate-700 rounded-full h-2">
+                                        <div class="bg-purple-500 h-2 rounded-full" style="width: ${item.progress}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                }
+            }
+        }
+        
+        document.getElementById('save-btn').addEventListener('click', saveCreations);
+        document.addEventListener('DOMContentLoaded', loadCreations);
+        
+        // Texture application
+        function applyTexture(textureId) {
+            alert(`Textura "${textureId}" aplicada al item seleccionado`);
+            // In a full implementation, this would update the model's appearance
+        }
+        
+        // Create weapon/armor buttons
+        document.getElementById('create-weapon-btn').addEventListener('click', () => {
+            const name = document.getElementById('weapon-name').value.trim();
+            if (name === '') {
+                alert('Por favor ingresa un nombre para tu arma');
+                return;
+            }
+            alert(`Arma "${name}" creada con éxito!`);
+        });
+        
+        document.getElementById('create-armor-btn').addEventListener('click', () => {
+            const name = document.getElementById('armor-name').value.trim();
+            if (name === '') {
+                alert('Por favor ingresa un nombre para tu armadura');
+                return;
+            }
+            alert(`Armadura "${name}" creada con éxito!`);
+        });
+    </script>
+</body>
+</html>
+
